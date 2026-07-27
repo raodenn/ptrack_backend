@@ -36,6 +36,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'social.apps.SocialConfig',
+    'gatherings.apps.GatheringsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
