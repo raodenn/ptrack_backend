@@ -69,3 +69,39 @@ class ListFriendsView(generics.ListAPIView):
         friends = User.objects.filter(id__in = friends_id)
         serializer = UserMinimalSerializer(friends, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class FriendDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self,request,pk):
+        user = request.user
+        friend_id = pk
+
+        u1_id, u2_id = sorted([str(user.id),str(friend_id)])
+
+        if not Friendship.objects.filter(user_id= u1_id, friend_id = u2_id).exists():
+            return Response(
+                {'detail':'Friendship not found'},
+                status = status.HTTP_404_NOT_FOUND)
+        friend = get_object_or_404(User, id = pk)
+        serialzer = UserMinimalSerializer(friend)
+        return Response (serialzer.data, status = status.HTTP_200_OK)
+
+
+    def delete(self, request, pk):
+        user = request.user
+        friend_id = pk
+
+        u1_id, u2_id = sorted([str(user.id),str(friend_id)])
+
+        deleted_count,_ = Friendship.objects.filter(
+            user_id = u1_id,
+            friend_id = u2_id
+        ).delete()
+
+        if deleted_count == 0:
+            return Response(
+                {'detail':'Friendship not found'},
+                status= status.HTTP_404_NOT_FOUND
+            )
+        return Response(status = status.HTTP_204_NO_CONTENT)
