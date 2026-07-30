@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils import timezone
-
+from django_cryptography.fields import encrypt
 User = get_user_model()
 
 class Venue(models.Model):
@@ -22,8 +22,8 @@ class Venue(models.Model):
 class UserLocation(models.Model):
     id = models.UUIDField(primary_key= True, default= uuid.uuid4 ,editable= False)
     user = models.ForeignKey(User, on_delete= models.CASCADE, related_name= 'locations')
-    latitude = models.TextField()
-    longitude = models.TextField()
+    latitude = encrypt(models.TextField())
+    longitude = encrypt(models.TextField())
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:

@@ -46,7 +46,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'django-cryptography'
 ]
+
+CRYPTOGRAPHY_KEY = os.getenv('CRYPTOGRAPHY_KEY', SECRET_KEY)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
