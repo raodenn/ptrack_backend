@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils import timezone
 from django_cryptography.fields import encrypt
+from utils.calc import haversine_distance
 User = get_user_model()
 
 class Venue(models.Model):
@@ -32,6 +33,18 @@ class UserLocation(models.Model):
     def __str__(self):
         return f"location for {self.user} @ {self.timestamp}"
 
+    @property
+    def lat(self) -> float:
+        return float(self.latitude)
+
+    @property
+    def lon(self) -> float:
+        return float(self.longitude)
+
+    def distance_to(self,other_location) -> float:
+        return haversine_distance(
+            self.lat, self.lon, other_location.lat, other_location.lon
+        )
 class Session(models.Model):
     id = models.UUIDField(primary_key= True,default = uuid.uuid4, editable= False)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name= 'created_sessions')
