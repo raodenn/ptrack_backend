@@ -4,6 +4,7 @@ from .models import UserLocation
 from social.models import Friendship
 from django.utils import timezone
 from utils.redis_utils import get_active_users as get_users_from_redis
+from utils.graph import connected_components
 from datetime import timedelta
 from django.db.models import Q
 
@@ -47,4 +48,5 @@ def check_proximity():
         if distance <= 0.01:
             graph.setdefault(u1_id,set()).add(u2_id)
             graph.setdefault(u2_id,set()).add(u1_id)
-            
+
+    components = connected_components(graph)
