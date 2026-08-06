@@ -7,12 +7,14 @@ from utils.redis_utils import get_active_users as get_users_from_redis
 from utils.graph import connected_components
 from datetime import timedelta
 from django.db.models import Q
+from .services import get_active_session_for_group
 
 User = get_user_model()
+PROXIMITY_THRESHOLD_METERS =0.01 # 10 meters
 
 @shared_task
 def check_proximity():
-    cutoff = timezone.now()- timedelta(minutes=5)
+    cutoff = timezone.now()- timedelta(minutes=2)
     active_users = get_users_from_redis()
     friends = Friendship.objects.filter(
         user__id__in=active_users,
@@ -45,7 +47,7 @@ def check_proximity():
 
         distance = u1_location.distance_to(u2_location) 
 
-        if distance <= 0.01:
+        if distance <= PROXIMITY_THRESHOLD_METERS:
             graph.setdefault(u1_id,set()).add(u2_id)
             graph.setdefault(u2_id,set()).add(u1_id)
 
