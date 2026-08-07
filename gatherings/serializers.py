@@ -17,3 +17,4 @@ class UserLocationSerializer(serializers.Serializer):
         if not (-180.0 <= value <= 180.0):
             raise serializers.ValidationError("Longitude must be between -180.0 and 180.0 degrees.")
         return value
+

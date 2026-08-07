@@ -7,7 +7,7 @@ from utils.redis_utils import get_active_users as get_users_from_redis
 from utils.graph import connected_components
 from datetime import timedelta
 from django.db.models import Q
-from .services import get_active_session_for_group
+from .services import get_active_session_for_group, update_attendance_left_at
 
 User = get_user_model()
 PROXIMITY_THRESHOLD_METERS =0.01 # 10 meters
@@ -52,3 +52,12 @@ def check_proximity():
             graph.setdefault(u2_id,set()).add(u1_id)
 
     components = connected_components(graph)
+
+    for group in components:
+        if len(group) >= 2:
+            session = get_active_session_for_group(group)
+            if not session:
+                # create_session_for_group(group)
+                pass
+        else:
+            update_attendance_left_at(group[0])
