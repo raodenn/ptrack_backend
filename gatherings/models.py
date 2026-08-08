@@ -49,6 +49,8 @@ class Session(models.Model):
     id = models.UUIDField(primary_key= True,default = uuid.uuid4, editable= False)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name= 'created_sessions')
     venue = models.ForeignKey(Venue, blank=True ,null=True ,on_delete=models.SET_NULL, related_name = "sessions")
+    latitude = encrypt(models.TextField())
+    longitude = encrypt(models.TextField())
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
