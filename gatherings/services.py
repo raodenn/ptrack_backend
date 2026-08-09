@@ -2,6 +2,7 @@ from .models import Session, Attendance
 from django.db.models import Count,Q
 from django.utils import timezone
 from datetime import timedelta
+from utils.calc import compute_centroid
 
 def get_active_session_for_group(users):
     """get active user session if available"""
@@ -68,9 +69,20 @@ def update_attendance_left_at(user):
     
     return attendance
 
-def create_session_for_group(group):
+def create_session_for_group(group, locations):
+    creator = group[0]
+    centroid = compute_centroid(locations)
     session = Session.objects.create(
-        creator = group[0]
+        creator = creator,
+        latitude = centroid[0],
+        longitude = centroid[1]
     )
+
     
-        
+    for user_id in group:
+        Attendance.objects.create(
+            session=session,
+            user_id=user_id,
+            joined_at=timezone.now(),
+            last_in_range_at=timezone.now()
+        )
