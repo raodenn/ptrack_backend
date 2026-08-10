@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from .models import Consent
 
 User = get_user_model()
 
@@ -38,3 +39,8 @@ class LogoutSerializer(serializers.Serializer):
             token.blacklist()
         except TokenError:
             raise serializers.ValidationError({"refresh": "Invalid or expired token."})
+
+class ConsentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Consent
+        fields = ['is_tracking_enabled']

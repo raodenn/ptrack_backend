@@ -1,7 +1,10 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
+from django.contrib.auth import get_user_model
 from accounts.managers import CustomUserManager
+
+User = get_user_model()
 
 class CustomUser(AbstractUser):
     """Custom user model that uses email as the unique identifier instead of username."""
@@ -22,4 +25,9 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
     
-
+class Consent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    is_tracking_enabled = models.BooleanField(default=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_consent')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
