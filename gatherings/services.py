@@ -1,8 +1,11 @@
-from .models import Session, Attendance
+from .models import Session, Attendance, Venue
 from django.db.models import Count,Q
 from django.utils import timezone
 from datetime import timedelta
 from utils.calc import compute_centroid
+from utils.venue import reverse_geocode_centroid
+from utils.redis_utils import add_active_venue,get_venue
+from django.db import transaction
 
 def get_active_session_for_group(users):
     """get active user session if available"""
@@ -76,25 +79,61 @@ def update_attendance_left_at(user):
 def create_session_for_group(group, locations):
     creator = group[0]
     centroid = compute_centroid(locations)
-    session = Session.objects.create(
-        creator = creator,
-        latitude = centroid[0],
-        longitude = centroid[1]
-    )    
-    for user_id in group:
-        Attendance.objects.create(
-            session=session,
-            user_id=user_id,
-            joined_at=timezone.now(),
-            last_in_range_at=timezone.now()
-        )
+    venue = reverse_geocode_centroid(centroid[0],centroid[1]) 
+    v_id = get_venue(centroid)
 
+    v = None
+
+    if v_id:
+        try:
+            v = Venue.objects.get(
+                id = v_id
+            )
+        except Venue.DoesNotExist:
+            v = None
+
+    if not v:
+        if venue:
+            v , created = Venue.objects.get_or_create(
+                name = venue["venue_name"],
+                latitude = venue["latitude"],
+                longitude = venue['longitude']
+            ) 
+            add_active_venue(v.id,centroid)
+        else:
+            v = Venue.objects.create(
+                    latitude = centroid[0],
+                    longitude = centroid[1]
+                ) 
+
+
+    with transaction.atomic():    
+        session = Session.objects.create(
+            creator = creator,
+            venue = v,
+            latitude = centroid[0],
+            longitude = centroid[1]
+        )   
+
+        now = timezone.now()
+        
+        attendances = [
+            Attendance(
+                session = session,
+                user_id = user_id,
+                joined_at = now,
+                last_in_range_at = now
+            )
+            for user_id in group
+        ]
+        Attendance.objects.bulk_create(attendances)
+    return session
 
 def end_attendance_for_user(user):
     attendance = Attendance.objects.filter(
             user = user,
             left_at__isnull = True,
-        )
+        ).first()
     
     if not attendance:
         return None

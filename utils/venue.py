@@ -22,7 +22,6 @@ def reverse_geocode_centroid(lat: float, lon: float) -> Optional[Dict[str, Any]]
             )
             
             return {
-                "address": location.address,
                 "latitude": location.latitude,
                 "longitude": location.longitude,
                 "venue_name": venue_name,
@@ -34,10 +33,3 @@ def reverse_geocode_centroid(lat: float, lon: float) -> Optional[Dict[str, Any]]
         
     return None
 
-centroid_lat, centroid_lng = 37.7749, -122.4194
-res = reverse_geocode_centroid(centroid_lat, centroid_lng)
-
-if res:
-    print(f"Venue Name: {res['venue_name']}")
-    print(f"Address:    {res['address']}")
-    print(f"Coords:     {res['latitude']}, {res['longitude']}")

@@ -48,7 +48,7 @@ class LogoutView(APIView):
 
 class UpdateConsentView(generics.UpdateAPIView):
     """
-    PUT /api/account/consent/
+    PUT /api/accounts/consent/
     Updates user consent status.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -63,5 +63,6 @@ class UpdateConsentView(generics.UpdateAPIView):
             if not instance.is_tracking_enabled:
                 remove_active_user(str(self.request.user.id))
                 end_attendance_for_user(self.request.user)
+            
 
 

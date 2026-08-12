@@ -78,7 +78,7 @@ class Attendance(models.Model):
 
     def save(self,*args, **kwargs):
         # auto populate durations seconds when left_at is populated
-        if self.left_at and self.joined_at and not self.duration_seconds:
+        if self.left_at and self.joined_at and self.duration_seconds is None:
             delta = self.left_at - self.joined_at
             self.duration_seconds = int(delta.total_seconds())
         super().save(*args, **kwargs)
