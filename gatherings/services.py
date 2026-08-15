@@ -92,22 +92,21 @@ def create_session_for_group(group, locations):
         except Venue.DoesNotExist:
             v = None
 
-    if not v:
-        if venue:
-            v , created = Venue.objects.get_or_create(
-                name = venue["venue_name"],
-                latitude = venue["latitude"],
-                longitude = venue['longitude']
-            ) 
-            add_active_venue(v.id,centroid)
-        else:
-            v = Venue.objects.create(
-                    latitude = centroid[0],
-                    longitude = centroid[1]
-                ) 
-
-
     with transaction.atomic():    
+        if not v:
+            if venue:
+                v , created = Venue.objects.get_or_create(
+                    latitude = venue["latitude"],
+                    longitude = venue['longitude']
+                ) 
+                add_active_venue(v.id,centroid)
+            else:
+                v = Venue.objects.create(
+                        latitude = centroid[0],
+                        longitude = centroid[1]
+                    ) 
+
+
         session = Session.objects.create(
             creator = creator,
             venue = v,

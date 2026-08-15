@@ -52,13 +52,11 @@ class SessionUpdateSerializer(serializers.ModelSerializer):
     venue = VenueSerializer()
     class Meta:
         model = Session
-        fields = ['id','creator','venue','is_active','created_at','ended_at','attendances','session_duration']
-        read_only_fields = ['id','creator','is_active','created_at','ended_at','attendances','session_duration']
-
+        fields = ['id','venue']
     def update(self, instance, validated_data):
         venue_data = validated_data.pop('venue',None)
 
-        if venue_data and instance.data:
+        if venue_data and instance.venue:
             instance.venue.name = venue_data.get('name',instance.venue.name)
             instance.venue.save()
 
