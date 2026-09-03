@@ -2,12 +2,12 @@ from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 from typing import Optional, Dict, Any
 
-geolocator = Nominatim(user_agent="ptrack")
 
 def reverse_geocode_centroid(lat: float, lon: float) -> Optional[Dict[str, Any]]:
     """
     Reverse geocodes centroid coordinates to fetch address and location info.
     """
+    geolocator = Nominatim(user_agent="ptrack")
     try:
         location = geolocator.reverse((lat, lon), timeout=5, exactly_one=True)
         

@@ -4,7 +4,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
-class UserLocationSerializer(serializers.Serializer):
+class UserLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserLocation
         fields = ['id','latitude','longitude','timestamp']
@@ -56,9 +56,12 @@ class SessionUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         venue_data = validated_data.pop('venue',None)
 
-        if venue_data and instance.venue:
-            instance.venue.name = venue_data.get('name',instance.venue.name)
-            instance.venue.save()
-
+        if venue_data :
+            if instance.venue:
+                instance.venue.name = venue_data.get('name',instance.venue.name)
+                instance.venue.save()
+            else:
+                instance.venue = Venue.objects.create(**venue_data)
+                instance.save(update_fields=['venue'])
         return super().update(instance, validated_data)
 

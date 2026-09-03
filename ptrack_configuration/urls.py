@@ -15,10 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
+from gatherings.views import VenueView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include('accounts.urls')),
     path('api/social/', include('social.urls')),
-    ]
+    path('api/notifications/', include('notifications.urls')),
+    path('api/venues/', VenueView.as_view(), name='venue-lookup'),
+    path('api/gatherings/', include('gatherings.urls')),
+]
+
+

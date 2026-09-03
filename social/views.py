@@ -52,9 +52,14 @@ class RespondToFriendRequestView(APIView):
             friend_request.status = 'accepted'
             friend_request.save()
 
+            u1,u2 = sorted(
+                [friend_request.sender,friend_request.receiver],
+                key = lambda u: str(u.id)
+                )
+
             Friendship.objects.get_or_create(
-                user = friend_request.sender,
-                friend = friend_request.receiver
+                user = u1,
+                friend = u2
             )
         return Response({"detail": "Friend request accepted."}, status=status.HTTP_200_OK)
 

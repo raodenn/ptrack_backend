@@ -17,6 +17,9 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     return R * c
 
 def compute_centroid(locations):
+    if not locations:
+        raise ValueError("Cannot compute centroid of an empty list.")
+
     denom = len(locations)
     total_lat = 0
     total_lon = 0

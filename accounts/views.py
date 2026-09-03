@@ -6,7 +6,7 @@ from django.db import transaction
 
 from .serializers import UserRegistrationSerializer, LogoutSerializer, ConsentSerializer
 from utils.redis_utils import remove_active_user
-from gatherings.services import end_attendance_for_user
+from gatherings.services.session_utils import end_attendance_for_user
 from .models import Consent
 
 
@@ -21,7 +21,7 @@ class UserRegistrationView(generics.CreateAPIView):
         with transaction.atomic():
 
             user = serializer.save()
-            Consent.objects.create(id=user, is_tracking_enabled=False)
+            Consent.objects.create(user=user, is_tracking_enabled=False)
 
         refresh = RefreshToken.for_user(user)
         return Response({
@@ -56,7 +56,8 @@ class UpdateConsentView(generics.UpdateAPIView):
 
     def get_object(self):
         obj,created = Consent.objects.get_or_create(user = self.request.user)
-
+        return obj
+    
     def perform_update(self, serializer):
         with transaction.atomic():
             instance = serializer.save()

@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-m+maxa@%nn4*=ck6smyxyq(^rg-wvgw@7$o*yzi9kxg^zt=81_'
-
+SECRET_KEY = os.environ['SECRET_KEY']
+if not SECRET_KEY:
+    raise ImproperlyConfigured("SECRET_KEY environment variable is not set.")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if not DEBUG else []
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
@@ -36,6 +38,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'social.apps.SocialConfig',
+    'notifications.apps.NotificationsConfig',
     'gatherings.apps.GatheringsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -60,16 +63,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+from celery.schedules import crontab
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_RATES': {
+        'nominatim': '1/sec',
+    },
 }
 
-ACCESS_TOKEN_LIFETIME = 60 * 60 * 24  # 1 day in seconds
-REFRESH_TOKEN_LIFETIME = 60 * 60 * 24 * 7  # 7 days in seconds
 
 ROOT_URLCONF = 'ptrack_configuration.urls'
 
@@ -149,6 +155,32 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 }
+
+# Celery Configuration
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
+CELERY_TIMEZONE = 'Africa/Addis_Ababa'
+CELERY_ENABLE_UTC = False
+
+CELERY_BEAT_SCHEDULE = {
+    'check_proximity_task': {
+        'task': 'gatherings.tasks.check_proximity_task',
+        'schedule': 60.0,  # every 60 seconds
+    },
+    'send_weekly_wrap_task': {
+        'task': 'gatherings.tasks.send_weekly_wrap_task',
+        'schedule': crontab(hour=8, minute=0, day_of_week='monday'),  # every Monday at 8am Addis Ababa time
+    },
+    'send_nudge_notifications_task': {
+        'task': 'gatherings.tasks.send_nudge_notifications_task',
+        'schedule': crontab(hour=9, minute=0),  # daily at 9am
+    },
+}
+

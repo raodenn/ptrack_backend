@@ -1,30 +1,61 @@
+import logging
 from .redis_client import r
 
-ACTIVE_USER_EXPIRY = 120 # 2 minutes
-ACTIVE_VENUE_EXPIRY = 604,800 # 7 days
+logger = logging.getLogger(__name__)
+
+ACTIVE_USER_EXPIRY = 120  # 2 minutes
+ACTIVE_VENUE_EXPIRY = 604_800  # 7 days
+
 
 def add_active_user(user_id):
-    r.set(f"active_user:{user_id}", '1',ex = ACTIVE_USER_EXPIRY)
+    try:
+        r.set(f"active_user:{user_id}", '1', ex=ACTIVE_USER_EXPIRY)
+    except Exception as e:
+        logger.warning(f"Redis add_active_user failed: {e}")
+
 
 def remove_active_user(user_id):
-    r.delete(f"active_user:{user_id}")
+    try:
+        r.delete(f"active_user:{user_id}")
+    except Exception as e:
+        logger.warning(f"Redis remove_active_user failed: {e}")
+
 
 def get_active_users():
-    key = r.keys('active_user:*')
+    try:
+        keys = r.keys('active_user:*')
+        return [k.split(':', 1)[1] for k in keys]
+    except Exception as e:
+        logger.warning(f"Redis get_active_users failed: {e}")
+        return []
 
-    return [k.split(':')[1] for k in key]
 
 def refresh_active_user(user_id):
-    r.expire(f"active_user:{user_id}",ACTIVE_USER_EXPIRY)
+    try:
+        r.expire(f"active_user:{user_id}", ACTIVE_USER_EXPIRY)
+    except Exception as e:
+        logger.warning(f"Redis refresh_active_user failed: {e}")
 
-def add_active_venue(venue_id,centroid):
-    r.set(f"venue:{round(centroid[0],4)}:{round(centroid[1],4)}",venue_id, ex = ACTIVE_VENUE_EXPIRY)
+
+def add_active_venue(venue_id, centroid):
+    try:
+        r.set(f"venue:{round(centroid[0],4)}:{round(centroid[1],4)}", venue_id, ex=ACTIVE_VENUE_EXPIRY)
+    except Exception as e:
+        logger.warning(f"Redis add_active_venue failed: {e}")
+
 
 def remove_active_venue(centroid):
-    key = f"venue:{centroid[0]:.4f}:{centroid[1]:.4f}"
-    r.delete(key)
+    try:
+        key = f"venue:{centroid[0]:.4f}:{centroid[1]:.4f}"
+        r.delete(key)
+    except Exception as e:
+        logger.warning(f"Redis remove_active_venue failed: {e}")
+
 
 def get_venue(centroid):
-    value = r.get(f"venue:{round(centroid[0],4)}:{round(centroid[1],4)}")
-    return value
-
+    try:
+        value = r.get(f"venue:{round(centroid[0],4)}:{round(centroid[1],4)}")
+        return value
+    except Exception as e:
+        logger.warning(f"Redis get_venue failed: {e}")
+        return None

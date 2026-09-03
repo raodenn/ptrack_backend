@@ -26,10 +26,11 @@ class SendFriendRequestSerializer(serializers.ModelSerializer):
         if sender.id == value:
             raise serializers.ValidationError("You cannot send a friend request to yourself.")
 
-        if not User.objects.filter(id=value).exists():
+        try:
+            receiver = User.objects.get(id = value)
+        except User.DoesNotExist:
             raise serializers.ValidationError("The user you are trying to send a friend request to does not exist.")
 
-        receiver = User.objects.get(id=value)
 
         u1_id,u2_id = sorted([sender.id, receiver.id])
         if Friendship.objects.filter(user_id=u1_id, friend_id=u2_id).exists():
@@ -40,7 +41,7 @@ class SendFriendRequestSerializer(serializers.ModelSerializer):
         ).first()
 
         if existing_request:
-            if existing_request and existing_request.sender == sender:
+            if existing_request.sender == sender:
                 raise serializers.ValidationError("You have already sent a friend request to this user.")
             else:
                 raise serializers.ValidationError("This user has already sent you a friend request. Please respond to it.")
@@ -66,4 +67,5 @@ class FriendRequestDetailSerializer(serializers.ModelSerializer):
     receiver = UserMinimalSerializer(read_only = True)
 
     class Meta:
+        model = FriendRequest
         fields = ['id','sender','receiver','status','created_at']

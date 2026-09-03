@@ -19,8 +19,8 @@ def connected_components(graph):
                         q.append(neighbour)
                         component.append(neighbour)
 
-        if component:
-            components.append(component)
+            if component:
+                components.append(component)
 
     return components
 
