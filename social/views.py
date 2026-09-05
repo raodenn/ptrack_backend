@@ -68,7 +68,7 @@ class ListFriendsView(generics.ListAPIView):
 
     def get(self,request):
         user = request.user
-        friendships = Friendship.objects.filter(Q(user=user)|Q(friend=user))
+        friendships = Friendship.objects.filter(Q(user=user)|Q(friend=user)).select_related('user', 'friend')
 
         friends_id = [f.friend.id if f.user_id == user.id else f.user.id for f in friendships]
         friends = User.objects.filter(id__in = friends_id)
@@ -110,3 +110,19 @@ class FriendDetailView(APIView):
                 status= status.HTTP_404_NOT_FOUND
             )
         return Response(status = status.HTTP_204_NO_CONTENT)
+
+
+class CancelFriendRequestView(APIView):
+    """Allow the sender to cancel their own pending friend request."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk):
+        friend_request = get_object_or_404(
+            FriendRequest,
+            id=pk,
+            sender=request.user,
+            status='pending'
+        )
+        friend_request.status = 'cancelled'
+        friend_request.save()
+        return Response({"detail": "Friend request cancelled."}, status=status.HTTP_200_OK)
