@@ -4,7 +4,8 @@ from .views import (
     PendingFriendRequestsView,
     ListFriendsView,
     RespondToFriendRequestView,
-    FriendDetailView
+    FriendDetailView,
+    CancelFriendRequestView
 )
 
 app_name = 'social'
@@ -24,6 +25,11 @@ urlpatterns = [
         'requests/<uuid:pk>/respond',
         RespondToFriendRequestView.as_view(),
         name = 'friend-request-respond'   
+    ),
+    path(
+        'requests/<uuid:pk>/cancel',
+        CancelFriendRequestView.as_view(),
+        name = 'friend-request-cancel'
     ),
     path(
         'friends/',

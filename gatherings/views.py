@@ -100,10 +100,16 @@ class AnalyticsView(APIView):
         raw_val = request.GET.get(query_key)
 
         if not raw_val:
-            return JsonResponse(
-                {"error": f"Missing required query parameter '?{query_key}='"}, 
-                status=400
-            )
+            # Default to current period
+            from datetime import datetime as dt
+            now = dt.now()
+            if period_type == "daily":
+                raw_val = now.strftime("%Y-%m-%d")
+            elif period_type == "weekly":
+                raw_val = now.strftime("%G-W%V")
+            elif period_type == "monthly":
+                raw_val = now.strftime("%Y-%m")
+
         user_tz = getattr(request.user, "timezone","Africa/Addis_Ababa")
 
         try:

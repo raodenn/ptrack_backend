@@ -2,8 +2,10 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+import uuid
 
 class Notification(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class NotificationType(models.TextChoices):
         request = 'FR', 'Friend Request'
         session = 'SS', 'Session'

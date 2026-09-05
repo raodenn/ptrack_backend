@@ -63,5 +63,4 @@ def notify_on_session_created(sender, instance, created, **kwargs):
         if notifications:
             Notification.objects.bulk_create(notifications)
 
-    _create_session_notifications()
     transaction.on_commit(_create_session_notifications)

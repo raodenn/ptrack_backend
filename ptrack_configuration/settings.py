@@ -27,8 +27,8 @@ SECRET_KEY = os.environ['SECRET_KEY']
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY environment variable is not set.")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = 'True'
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if not DEBUG else []
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if not DEBUG else ['*']
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
@@ -73,6 +73,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_RATES': {
         'nominatim': '1/sec',
+        'anon_auth': '5/minute',
     },
 }
 
@@ -107,8 +108,11 @@ DATABASES = {
         'NAME': os.environ.get('DB_NAME'),
         'USER': os.environ.get('DB_USER'),
         'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': 'db',
-        'PORT': 5432,
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': int(os.environ.get('DB_PORT', 5432)),
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
     }
 }
 
@@ -160,6 +164,18 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 }
+
+# Email Configuration
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@ptrack.local')
 
 # Celery Configuration
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')

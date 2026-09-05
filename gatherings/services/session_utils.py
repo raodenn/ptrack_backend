@@ -1,4 +1,5 @@
 from collections import defaultdict
+import logging
 
 from ..models import Session, Attendance, Venue
 from django.db.models import Count,Q, Exists, OuterRef
@@ -7,11 +8,14 @@ from datetime import timedelta
 from utils.calc import compute_centroid
 from utils.venue import reverse_geocode_centroid
 from utils.redis_utils import add_active_venue,get_venue
+from utils.redis_client import r as redis_client
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from notifications.models import Notification
 from social.models import Friendship
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -85,60 +89,82 @@ def update_attendance_left_at(user_id):
     return attendance
 
 def create_session_for_group(group, locations):
-    creator_id = group[0]
-    creator = User.objects.get(id=creator_id)
-    centroid = compute_centroid(locations)
-    venue = reverse_geocode_centroid(centroid[0],centroid[1]) 
-    v_id = get_venue(centroid)
+    # Build a deterministic lock key from sorted group member IDs
+    sorted_ids = sorted(str(uid) for uid in group)
+    lock_key = f"lock:session:{'_'.join(sorted_ids)}"
 
-    v = None
+    # SETNX: acquire lock with 30s auto-expiry as safety valve
+    lock_acquired = redis_client.set(lock_key, '1', nx=True, ex=30)
+    if not lock_acquired:
+        logger.info(f"Session creation skipped — another worker holds lock for group {sorted_ids}")
+        return None
 
-    if v_id:
-        try:
-            v = Venue.objects.get(
-                id = v_id
-            )
-        except Venue.DoesNotExist:
-            v = None
+    try:
+        # Double-check: maybe the other worker already created the session
+        existing = get_active_session_for_group(group)
+        if existing:
+            return existing
 
-    with transaction.atomic():    
-        if not v:
-            if venue:
-                v, created = Venue.objects.get_or_create(
-                    latitude=venue["latitude"],
-                    longitude=venue['longitude'],
-                    defaults={'name': venue.get('venue_name', 'Unlisted Location')}
+        creator_id = group[0]
+        creator = User.objects.get(id=creator_id)
+        centroid = compute_centroid(locations)
+        venue = reverse_geocode_centroid(centroid[0],centroid[1]) 
+        v_id = get_venue(centroid)
+
+        v = None
+
+        if v_id:
+            try:
+                v = Venue.objects.get(
+                    id = v_id
                 )
+            except Venue.DoesNotExist:
+                v = None
 
-                add_active_venue(v.id,centroid)
-            else:
-                v = Venue.objects.create(
-                        latitude = centroid[0],
-                        longitude = centroid[1]
-                    ) 
+        with transaction.atomic():    
+            if not v:
+                if venue:
+                    v, created = Venue.objects.get_or_create(
+                        latitude=venue["latitude"],
+                        longitude=venue['longitude'],
+                        defaults={'name': venue.get('venue_name', 'Unlisted Location')}
+                    )
+
+                    add_active_venue(v.id,centroid)
+                else:
+                    v = Venue.objects.create(
+                            latitude = centroid[0],
+                            longitude = centroid[1]
+                        ) 
 
 
-        session = Session.objects.create(
-            creator = creator,
-            venue = v,
-            latitude = centroid[0],
-            longitude = centroid[1]
-        )   
+            session = Session.objects.create(
+                creator = creator,
+                venue = v,
+                latitude = centroid[0],
+                longitude = centroid[1]
+            )   
 
-        now = timezone.now()
-        
-        attendances = [
-            Attendance(
-                session = session,
-                user_id = user_id,
-                joined_at = now,
-                last_in_range_at = now
-            )
-            for user_id in group
-        ]
-        Attendance.objects.bulk_create(attendances)
+            now = timezone.now()
+            
+            attendances = [
+                Attendance(
+                    session = session,
+                    user_id = user_id,
+                    joined_at = now,
+                    last_in_range_at = now
+                )
+                for user_id in group
+            ]
+            Attendance.objects.bulk_create(attendances)
 
-    return session
+        return session
+    finally:
+        # Always release the lock
+        try:
+            redis_client.delete(lock_key)
+        except Exception:
+            pass  # Lock will auto-expire after 30s anyway
 
 
 def end_attendance_for_user(user):
@@ -219,7 +245,11 @@ def get_ranked_friends_by_shared_time(current_user, start = None, end = None):
 
     ranked_friends = [
         {
-            'user': friend_objects[uid],
+            'user': {
+                'id': str(friend_objects[uid].id),
+                'username': friend_objects[uid].username,
+                'email': friend_objects[uid].email,
+            },
             'total_shared_seconds': secs,
             'total_shared_minutes': round(secs / 60, 1),
             'total_shared_hours': round(secs / 3600, 2),

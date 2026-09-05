@@ -12,6 +12,7 @@ class CustomUser(AbstractUser):
     username = models.CharField(max_length=150, blank=True, null=True)
     birthday = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    timezone = models.CharField(max_length=50, default='Africa/Addis_Ababa')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

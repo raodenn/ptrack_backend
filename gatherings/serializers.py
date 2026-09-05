@@ -9,6 +9,10 @@ class UserLocationSerializer(serializers.ModelSerializer):
         model = UserLocation
         fields = ['id','latitude','longitude','timestamp']
         read_only_fields = ['id','timestamp']
+        extra_kwargs = {
+            'latitude': {'write_only': True},
+            'longitude': {'write_only': True},
+        }
 
     def validate_latitude(self, value: float) -> float:
         if not (-90.0 <= value <= 90.0):

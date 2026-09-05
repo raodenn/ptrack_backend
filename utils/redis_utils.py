@@ -23,7 +23,7 @@ def remove_active_user(user_id):
 
 def get_active_users():
     try:
-        keys = r.keys('active_user:*')
+        keys = list(r.scan_iter('active_user:*'))
         return [k.split(':', 1)[1] for k in keys]
     except Exception as e:
         logger.warning(f"Redis get_active_users failed: {e}")
