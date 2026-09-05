@@ -1,24 +1,31 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8000
 
 WORKDIR /app
 
-# Minimal runtime dependency (~200 KB instead of ~380 MB of compilers)
+# Install minimal runtime dependencies + curl for health checks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Cached dependencies layer: runs only when requirements.txt changes
+# Dependency cache layer: only rebuilds when requirements.txt changes
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Project source code
+# Copy application source code
 COPY . /app/
 
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint.sh
+# Set up non-root user and grant execution rights
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser \
+    && chmod +x /app/entrypoint.sh \
+    && chown -R appuser:appgroup /app
+
+USER appuser
 
 EXPOSE 8000
 
