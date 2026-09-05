@@ -15,6 +15,7 @@ django-cors-headers==4.7.0
 django-cryptography==1.1
 djangorestframework==3.17.1
 djangorestframework_simplejwt==5.5.1
+drf-spectacular==0.30.0
 geographiclib==2.1
 geopy==2.5.0
 gunicorn==23.0.0
