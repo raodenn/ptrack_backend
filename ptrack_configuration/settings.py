@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'social.apps.SocialConfig',
     'corsheaders',
+    'drf_spectacular',
     'notifications.apps.NotificationsConfig',
     'gatherings.apps.GatheringsConfig',
     'django.contrib.admin',
@@ -84,6 +85,7 @@ REST_FRAMEWORK = {
         'nominatim': '1/sec',
         'anon_auth': '5/minute',
     },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 
@@ -209,3 +211,25 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PTrack API',
+    'DESCRIPTION': 'Backend API for PTrack tracking and proximity services',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SECURITY': [
+        {
+            'jwtAuth': [],
+        }
+    ],
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'jwtAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
+}
