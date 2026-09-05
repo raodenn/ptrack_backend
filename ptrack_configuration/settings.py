@@ -38,6 +38,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'social.apps.SocialConfig',
+    'corsheaders',
     'notifications.apps.NotificationsConfig',
     'gatherings.apps.GatheringsConfig',
     'django.contrib.admin',
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
 CRYPTOGRAPHY_KEY = os.getenv('CRYPTOGRAPHY_KEY', SECRET_KEY)
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -63,6 +65,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
