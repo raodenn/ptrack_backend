@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from gatherings.views import VenueView
+from oauth2_provider import urls as oauth2_urls
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -37,5 +38,6 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     path('api/venues/', VenueView.as_view(), name='venue-lookup'),
     path('api/gatherings/', include('gatherings.urls')),
+    path('o/', include(oauth2_urls))
 ]
 
