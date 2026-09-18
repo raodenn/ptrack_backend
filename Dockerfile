@@ -20,13 +20,17 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy application source code
 COPY . /app/
 
+COPY entrypoint.sh /entrypoint.sh
+
 # Set up non-root user and grant execution rights
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser \
-    && chmod +x /app/entrypoint.sh \
+    && sed -i 's/\r$//' /entrypoint.sh \
+    && chmod 755 /entrypoint.sh \
     && chown -R appuser:appgroup /app
 
 USER appuser
 
 EXPOSE 8000
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["gunicorn", "ptrack_configuration.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
